@@ -46,7 +46,7 @@ fn main() {
 // Update's the grid if more than 200 milliseconds have pass since last_update. If the grid is
 // updated, `last_updated` will hold the current time.
 fn maybe_update_grid(grid: &mut Grid, last_updated: &mut Instant) {
-    let duration_per_update = Duration::from_millis(200);
+    let duration_per_update = Duration::from_millis(50);
     if last_updated.elapsed() < duration_per_update {
         return;
     }
