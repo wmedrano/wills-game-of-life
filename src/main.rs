@@ -1,81 +1,20 @@
-use std::time::{Duration, Instant};
-
-use grid::Grid;
+use board::Board;
 use palette::Palette;
 use piston_window::{
     clear, rectangle_from_to, Event, Loop, PistonWindow, Transformed, WindowSettings,
 };
+use std::time::{Duration, Instant};
 
-mod grid;
+mod board;
 mod palette;
+mod settings;
 
-const WINDOW_SIZE: (u32, u32) = (640, 480);
-const TILE_SIZE: usize = 10;
-
-struct State {
-    // The state of the grid.
-    grid: Grid,
-    // The last time that the grid was updated.
-    last_update: Instant,
-}
-
-impl Default for State {
-    fn default() -> State {
-        State {
-            grid: initial_grid(),
-            last_update: Instant::now(),
-        }
-    }
-}
-
-fn main() {
-    let mut window: PistonWindow = WindowSettings::new("Will's Game of Life", WINDOW_SIZE)
-        .exit_on_esc(true)
-        .resizable(false)
-        .build()
-        .unwrap_or_else(|e| panic!("Failed to build window: {}", e));
-    let mut state = State::default();
-    while let Some(e) = window.next() {
-        if let Event::Loop(Loop::Render(_)) = e {
-            maybe_update_grid(&mut state.grid, &mut state.last_update);
-            render(&mut window, &e, &state.grid);
-        }
-    }
-}
-
-// Update's the grid if more than 200 milliseconds have pass since last_update. If the grid is
-// updated, `last_updated` will hold the current time.
-fn maybe_update_grid(grid: &mut Grid, last_updated: &mut Instant) {
-    let duration_per_update = Duration::from_millis(50);
-    if last_updated.elapsed() < duration_per_update {
-        return;
-    }
-    *last_updated = Instant::now();
-    *grid = grid.next_step();
-}
-
-/// Render's the contents onto window.
-fn render(window: &mut piston_window::PistonWindow, e: &piston_window::Event, grid: &Grid) {
-    window.draw_2d(e, |c, g, _| {
-        clear(Palette.background(), g);
-        for (x, y) in grid.iter_alive() {
-            rectangle_from_to(
-                Palette.foreground(),
-                [x as f64, y as f64],
-                [x as f64 + 1.0, y as f64 + 1.0],
-                c.transform.scale(10.0, 10.0),
-                g,
-            );
-        }
-    });
-}
-
-fn initial_grid() -> Grid {
-    let mut grid = Grid::new(
-        WINDOW_SIZE.0 as usize / TILE_SIZE,
-        WINDOW_SIZE.1 as usize / TILE_SIZE,
+fn initial_board() -> Board {
+    let mut board = Board::new(
+        settings::WINDOW_SIZE.0 as usize / settings::TILE_SIZE,
+        settings::WINDOW_SIZE.1 as usize / settings::TILE_SIZE,
     );
-    grid.add_lives(
+    board.add_lives(
         [
             (10, 10),
             (11, 10),
@@ -114,5 +53,60 @@ fn initial_grid() -> Grid {
         ]
         .into_iter(),
     );
-    grid
+    board
+}
+
+struct State {
+    board: Board,
+    last_update: Instant,
+}
+
+impl Default for State {
+    fn default() -> State {
+        State {
+            board: initial_board(),
+            last_update: Instant::now(),
+        }
+    }
+}
+
+fn main() {
+    let mut window: PistonWindow =
+        WindowSettings::new("Will's Game of Life", settings::WINDOW_SIZE)
+            .exit_on_esc(true)
+            .resizable(false)
+            .build()
+            .unwrap_or_else(|e| panic!("Failed to build window: {}", e));
+    let mut state = State::default();
+    while let Some(e) = window.next() {
+        if let Event::Loop(Loop::Render(_)) = e {
+            maybe_update_board(&mut state.board, &mut state.last_update);
+            render(&mut window, &e, &state.board);
+        }
+    }
+}
+
+fn maybe_update_board(board: &mut Board, last_updated: &mut Instant) {
+    let duration_per_update = Duration::from_millis(50);
+    if last_updated.elapsed() <= duration_per_update {
+        return;
+    }
+    *last_updated = Instant::now();
+    *board = board.next_step();
+}
+
+fn render(window: &mut piston_window::PistonWindow, e: &piston_window::Event, board: &Board) {
+    window.draw_2d(e, |c, g, _| {
+        clear(Palette.background(), g);
+        for (x, y) in board.iter_alive() {
+            rectangle_from_to(
+                Palette.foreground(),
+                [x as f64, y as f64],
+                [x as f64 + 1.0, y as f64 + 1.0],
+                c.transform
+                    .scale(settings::TILE_SIZE as f64, settings::TILE_SIZE as f64),
+                g,
+            );
+        }
+    });
 }
