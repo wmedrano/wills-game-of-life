@@ -1,19 +1,31 @@
 #+title: Game of Life
 #+author: Will Medrano
 #+email: will.s.medrano@gmail.com
-#+date: 2023-04-23
+#+date: 2023-04-24
 
 * Introduction
+:PROPERTIES:
+:CUSTOM_ID: Introduction-0bxi6m51ftj0
+:END:
 
 This is a Rust implementation of [[https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life][Conway's Game of Life]].
 
 ** TODO Use gif instead of static screenshot.
+:PROPERTIES:
+:CUSTOM_ID: IntroductionUsegifinsteadofstaticscreenshot-layi6m51ftj0
+:END:
 
 [[./screenshot.png]]
 
 * Main
+:PROPERTIES:
+:CUSTOM_ID: Main-jzyi6m51ftj0
+:END:
 
 ** Initial State
+:PROPERTIES:
+:CUSTOM_ID: MainInitialState-cnzi6m51ftj0
+:END:
 
 #+begin_src rust :tangle src/main.rs :exports none
   use board::Board;
@@ -27,7 +39,7 @@ This is a Rust implementation of [[https://en.wikipedia.org/wiki/Conway%27s_Game
   mod palette;
   mod settings;
 
-  fn initial_board() -> Board {
+  fn initial_board_impl() -> Board {
       let mut board = Board::new(
           settings::WINDOW_SIZE.0 as usize / settings::TILE_SIZE,
           settings::WINDOW_SIZE.1 as usize / settings::TILE_SIZE,
@@ -91,7 +103,28 @@ This is a Rust implementation of [[https://en.wikipedia.org/wiki/Conway%27s_Game
   }
 #+end_src
 
+*** Initial Board
+:PROPERTIES:
+:CUSTOM_ID: MainInitialStateInitialBoard-hc0j6m51ftj0
+:END:
+
+The initial board is currently hardcoded to place life in very particular
+spots. Some of the following items should be implemented instead of this
+hardcoded approach:
+
+- Start with an empty board and allow the user to place life.
+- Load the board from a file.
+
+#+begin_src rust :tangle src/main.rs
+  fn initial_board() -> Board {
+      initial_board_impl()
+  }
+#+end_src
+
 ** Game Loop
+:PROPERTIES:
+:CUSTOM_ID: MainGameLoop-611j6m51ftj0
+:END:
 
 The main game loop creates a Piston window and loops through these steps:
 
@@ -119,6 +152,9 @@ The main game loop creates a Piston window and loops through these steps:
 
 
 *** Board Update
+:PROPERTIES:
+:CUSTOM_ID: MainGameLoopBoardUpdate-fp1j6m51ftj0
+:END:
 
 The board is updated every 50 milliseconds. If less than 50 milliseconds have
 passed, then nothing happens.
@@ -126,7 +162,7 @@ passed, then nothing happens.
 #+begin_src rust :tangle src/main.rs
   fn maybe_update_board(board: &mut Board, last_updated: &mut Instant) {
       let duration_per_update = Duration::from_millis(50);
-      if last_updated.elapsed() <= duration_per_update {
+      if last_updated.elapsed() < duration_per_update {
           return;
       }
       ,*last_updated = Instant::now();
@@ -135,6 +171,9 @@ passed, then nothing happens.
 #+end_src
 
 *** Rendering
+:PROPERTIES:
+:CUSTOM_ID: MainGameLoopRendering-pd2j6m51ftj0
+:END:
 
 Piston is used for rendering. Although it is an older Rust library, it is very
 easy to use. Especially for the game of Life which only requires drawing
@@ -162,6 +201,9 @@ squares. Rendering involves:
 #+end_src
 
 * Settings
+:PROPERTIES:
+:CUSTOM_ID: Settings-1z2j6m51ftj0
+:END:
 
 #+begin_src rust :tangle src/settings.rs
   pub const WINDOW_SIZE: (u32, u32) = (640, 480);
@@ -170,6 +212,9 @@ squares. Rendering involves:
 
 
 * Palette
+:PROPERTIES:
+:CUSTOM_ID: Palette-qj3j6m51ftj0
+:END:
 
 This color palette was taken from [[https://coolors.co/palette/ef476f-ffd166-06d6a0-118ab2-073b4c][coolors.co]].
 
@@ -204,6 +249,9 @@ This color palette was taken from [[https://coolors.co/palette/ef476f-ffd166-06d
 #+end_src
 
 * Board
+:PROPERTIES:
+:CUSTOM_ID: Board-p54j6m51ftj0
+:END:
 
 #+begin_src rust :tangle src/board.rs
   #[derive(Copy, Clone, Eq, PartialEq)]
@@ -243,20 +291,32 @@ This color palette was taken from [[https://coolors.co/palette/ef476f-ffd166-06d
               .filter(|(_, state)| Cell::Alive == **state)
               .map(|(idx, _)| self.cell_for_index(idx))
       }
+  }
+#+end_src
 
+The game of life consists of steps. Each step, the board is updated according to
+the number of live neighbors. The following rules apply:
+
+- An alive cell with 0 or 1 live neighbors becomes unalive.
+- An alive cell with 2 or 3 live neighbors will remain alive.
+- A not alive cell with 3 neighbors will become alive.
+
+#+begin_src rust :tangle src/board.rs
+  impl Board {
       pub fn next_step(&mut self) -> Board {
-          let mut ret = Board::new(self.width, self.height());
-          let neighbors = self.count_live_neighbors();
-          // Populate cells that survive to the next generation.  These are cells that are currently
+          let position_to_neighbors_count = self.count_live_neighbors();
+
+          // Populate cells that survive to the next generation. These are cells that are currently
           // alive and surround by 2 or 3 neighbors.
-          for (x, y) in self.iter_alive() {
-              let cnt = neighbors.get(&(x, y)).copied().unwrap_or_default();
-              if cnt == 2 || cnt == 3 {
-                  ret.add_life(x, y);
+          let mut ret = Board::new(self.width, self.height());
+          for pos in self.iter_alive() {
+              let neightbors_count = position_to_neighbors_count.get(&pos).copied().unwrap_or(0);
+              if let 2 | 3 = neighbors_count {
+                  ret.add_life(pos.0, pos.1);
               }
           }
           // Populate cells that are surrounded by exactly 3 neighbors.
-          for (pos, cnt) in neighbors.iter() {
+          for (pos, cnt) in position_to_neighbors_count.iter() {
               if *cnt == 3 {
                   ret.add_life(pos.0, pos.1);
               }

@@ -9,7 +9,7 @@ mod board;
 mod palette;
 mod settings;
 
-fn initial_board() -> Board {
+fn initial_board_impl() -> Board {
     let mut board = Board::new(
         settings::WINDOW_SIZE.0 as usize / settings::TILE_SIZE,
         settings::WINDOW_SIZE.1 as usize / settings::TILE_SIZE,
@@ -70,6 +70,10 @@ impl Default for State {
     }
 }
 
+fn initial_board() -> Board {
+    initial_board_impl()
+}
+
 fn main() {
     let mut window: PistonWindow =
         WindowSettings::new("Will's Game of Life", settings::WINDOW_SIZE)
@@ -88,7 +92,7 @@ fn main() {
 
 fn maybe_update_board(board: &mut Board, last_updated: &mut Instant) {
     let duration_per_update = Duration::from_millis(50);
-    if last_updated.elapsed() <= duration_per_update {
+    if last_updated.elapsed() < duration_per_update {
         return;
     }
     *last_updated = Instant::now();

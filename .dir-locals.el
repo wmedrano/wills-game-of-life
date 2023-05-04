@@ -1,3 +1,5 @@
-((nil . (
-         (org-hugo-section . "literate-programs")
-         )))
+((org-mode . ((org-hugo-section . "literate-programs")
+              (org-confirm-babel-evaluate . nil)
+              (org-hugo-default-static-subdirectory-for-externals . "ox-hugo/game-of-life")
+              (mode . org-hugo-auto-export)
+              )))

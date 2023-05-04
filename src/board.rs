@@ -41,10 +41,9 @@ impl Board {
         let neighbors = self.count_live_neighbors();
         // Populate cells that survive to the next generation.  These are cells that are currently
         // alive and surround by 2 or 3 neighbors.
-        for (x, y) in self.iter_alive() {
-            let cnt = neighbors.get(&(x, y)).copied().unwrap_or_default();
-            if cnt == 2 || cnt == 3 {
-                ret.add_life(x, y);
+        for pos in self.iter_alive() {
+            if let 2 | 3 = neighbors.get(&pos).copied().unwrap_or_default() {
+                ret.add_life(pos.0, pos.1);
             }
         }
         // Populate cells that are surrounded by exactly 3 neighbors.
